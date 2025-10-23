@@ -1,0 +1,8 @@
+streamlit
+flask
+transformers
+torch
+gtts
+speechrecognition
+pandas
+
