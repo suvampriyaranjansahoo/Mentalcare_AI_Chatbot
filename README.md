@@ -92,6 +92,15 @@ python flask_app/app.py
 
 Open `http://localhost:5000`. The application requires the existing model artifact at `artifacts/models/final_model.joblib`.
 
+## Deploy on Streamlit Community Cloud
+
+1. Push this repository to GitHub, including `streamlit_app.py` and `artifacts/models/final_model.joblib`.
+2. In [Streamlit Community Cloud](https://share.streamlit.io/), select **New app**, choose the GitHub repository and `main` branch, then set the main file to `streamlit_app.py`.
+3. Add a `FLASK_SECRET_KEY` in the Streamlit **Secrets** page. Do not commit `.env`.
+4. Deploy. The app has no external API requirement: Streamlit directly loads the existing model and safety services.
+
+Streamlit Community Cloud has ephemeral local storage. Its SQLite database is suitable only for a portfolio demo; use a managed PostgreSQL database before collecting persistent user messages or feedback.
+
 ## Testing, reproducibility, and MLOps
 
 ```bash

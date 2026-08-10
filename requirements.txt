@@ -1,5 +1,6 @@
 # Core web app
 flask==3.0.3
+streamlit==1.37.0
 
 # Data / ML (baseline pipeline, real-time model at runtime)
 pandas==2.2.2
