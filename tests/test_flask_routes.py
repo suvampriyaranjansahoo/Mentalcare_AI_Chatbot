@@ -4,13 +4,21 @@ import sys
 import pytest
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(BASE_DIR, "flask_app"))
+sys.path.insert(0, BASE_DIR)
 
-from app import app  # noqa: E402
+from app import create_app  # noqa: E402
+from app.config import Settings  # noqa: E402
 
 
 @pytest.fixture
-def client():
+def client(tmp_path):
+    settings = Settings(
+        secret_key="test-secret",
+        database_path=tmp_path / "test.db",
+        model_path=os.path.join(BASE_DIR, "artifacts", "models", "final_model.joblib"),
+        model_version="test",
+    )
+    app = create_app(settings)
     app.config["TESTING"] = True
     with app.test_client() as client:
         yield client
