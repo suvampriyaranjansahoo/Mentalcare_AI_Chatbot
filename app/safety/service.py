@@ -31,7 +31,7 @@ class SafetyService:
         r"\b(hurt myself|self[- ]harm|cut myself)\b",
     )
     DISTRESS = (
-        r"\b(overwhelmed|hopeless|worthless|can't cope|cannot cope|panic attack|numb)\b",
+        r"\b(overwhelmed|hopeless|worthless|can't cope|cannot cope|panic attack|numb|bad mood|feeling down)\b",
         r"\b(feel(?:ing)? (?:so )?(?:low|empty|alone|scared))\b",
     )
 
