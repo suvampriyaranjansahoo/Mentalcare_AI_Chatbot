@@ -10,6 +10,21 @@ MentalCare AI is a Flask-based emotion-aware conversation demo designed to show 
 
 Provide a bounded, non-clinical conversational interface that acknowledges a user's expressed emotion, declines to diagnose, escalates high-risk language to a safety response, and produces anonymized product-quality signals without requiring profile data.
 
+## Local Hugging Face + Ollama generation
+
+The default repository artifact remains a lightweight TF-IDF classifier so the app starts offline. For transformer inference, install `pip install -r requirements-local-llm.txt` and instantiate `HuggingFaceEmotionClassifier` with a locally downloaded compatible emotion model. Hugging Face supplies emotion classification; Ollama supplies only local, dynamic text generation—no paid API is used.
+
+Install Ollama, pull a local model, and configure the app:
+
+```bash
+ollama pull llama3.2:3b
+set LLM_PROVIDER=ollama
+set OLLAMA_MODEL=llama3.2:3b
+set OLLAMA_BASE_URL=http://localhost:11434
+```
+
+For each normal message, the prompt contains the bounded recent session history, emotion/intent and their confidence, and safety state. High-risk messages never go to Ollama. Generated text is checked for empty output, unsafe/diagnostic language, prompt leakage, repetition, and unreasonable length; one retry is allowed, then the existing safe response fallback is used.
+
 ## Architecture
 
 ```mermaid

@@ -5,15 +5,17 @@ from uuid import uuid4
 import streamlit as st
 from app.config import Settings
 from app.database import ConversationRepository
-from app.nlp import EmotionClassifier
+from app.nlp.factory import build_emotion_classifier
 from app.safety import SafetyService
 from app.services import ChatService
+from app.llm import OllamaClient
 
 @st.cache_resource
 def get_service() -> ChatService:
     if "FLASK_SECRET_KEY" in st.secrets: os.environ["FLASK_SECRET_KEY"] = st.secrets["FLASK_SECRET_KEY"]
     settings = Settings.from_env()
-    return ChatService(settings, ConversationRepository(settings.database_path), EmotionClassifier(settings.model_path), SafetyService())
+    llm = OllamaClient(settings.ollama_base_url, settings.ollama_model, settings.ollama_timeout_seconds)
+    return ChatService(settings, ConversationRepository(settings.database_path), build_emotion_classifier(settings), SafetyService(), llm)
 
 def confidence_meter(confidence: float) -> None:
     st.progress(int(confidence * 100), text=f"Model confidence: {confidence:.0%}")

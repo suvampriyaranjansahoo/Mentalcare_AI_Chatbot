@@ -5,9 +5,10 @@ from flask import Flask, jsonify, render_template, request, session
 from app.analytics import session_analytics
 from app.config import Settings
 from app.database import ConversationRepository
-from app.nlp import EmotionClassifier
+from app.nlp.factory import build_emotion_classifier
 from app.safety import SafetyService
 from app.services import ChatService
+from app.llm import OllamaClient
 
 
 def _error(message: str, status: int, code: str = "validation_error"):
@@ -19,7 +20,8 @@ def create_app(settings: Settings | None = None) -> Flask:
     app = Flask(__name__, template_folder="../../flask_app/templates", static_folder="../../flask_app/static")
     app.config.update(SECRET_KEY=settings.secret_key, SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
     repository = ConversationRepository(settings.database_path)
-    service = ChatService(settings, repository, EmotionClassifier(settings.model_path), SafetyService())
+    llm = OllamaClient(settings.ollama_base_url, settings.ollama_model, settings.ollama_timeout_seconds)
+    service = ChatService(settings, repository, build_emotion_classifier(settings), SafetyService(), llm)
     app.extensions["chat_service"] = service
     app.extensions["repository"] = repository
     app.extensions["settings"] = settings

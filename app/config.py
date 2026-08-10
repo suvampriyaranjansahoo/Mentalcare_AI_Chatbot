@@ -18,6 +18,13 @@ class Settings:
     low_confidence_threshold: float = 0.45
     medium_confidence_threshold: float = 0.70
     retention_days: int = 30
+    llm_provider: str = "ollama"
+    ollama_model: str = "llama3.2:3b"
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_timeout_seconds: float = 20.0
+    memory_message_limit: int = 6
+    emotion_provider: str = "sklearn"
+    hf_emotion_model: str = "j-hartmann/emotion-english-distilroberta-base"
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -30,4 +37,11 @@ class Settings:
             low_confidence_threshold=float(os.environ.get("LOW_CONFIDENCE_THRESHOLD", "0.45")),
             medium_confidence_threshold=float(os.environ.get("MEDIUM_CONFIDENCE_THRESHOLD", "0.70")),
             retention_days=int(os.environ.get("RETENTION_DAYS", "30")),
+            llm_provider=os.environ.get("LLM_PROVIDER", "ollama"),
+            ollama_model=os.environ.get("OLLAMA_MODEL", "llama3.2:3b"),
+            ollama_base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
+            ollama_timeout_seconds=float(os.environ.get("OLLAMA_TIMEOUT_SECONDS", "20")),
+            memory_message_limit=int(os.environ.get("MEMORY_MESSAGE_LIMIT", "6")),
+            emotion_provider=os.environ.get("EMOTION_PROVIDER", "sklearn"),
+            hf_emotion_model=os.environ.get("HF_EMOTION_MODEL", "j-hartmann/emotion-english-distilroberta-base"),
         )

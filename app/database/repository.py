@@ -53,9 +53,13 @@ class ConversationRepository:
             cursor = conn.execute(f"INSERT INTO messages ({', '.join(columns)}) VALUES ({placeholders})", tuple(record.values()))
             return int(cursor.lastrowid)
 
-    def session_messages(self, session_id: str) -> list[dict[str, Any]]:
+    def session_messages(self, session_id: str, limit: int | None = None) -> list[dict[str, Any]]:
         with self.connect() as conn:
-            return [dict(row) for row in conn.execute("SELECT * FROM messages WHERE session_id = ? ORDER BY timestamp, id", (session_id,))]
+            if limit:
+                rows = conn.execute("SELECT * FROM (SELECT * FROM messages WHERE session_id = ? ORDER BY timestamp DESC, id DESC LIMIT ?) ORDER BY timestamp, id", (session_id, limit))
+            else:
+                rows = conn.execute("SELECT * FROM messages WHERE session_id = ? ORDER BY timestamp, id", (session_id,))
+            return [dict(row) for row in rows]
 
     def add_feedback(self, message_id: int, helpful: bool) -> bool:
         with self.connect() as conn:
