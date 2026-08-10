@@ -180,3 +180,30 @@ near-duplicate appears in both `train.csv` and `evaluation.csv`.
 - Class imbalance is mild (ratio 1.002), which Phase 7 will examine against per-class F1 to determine whether it materially affects the model.
 - Near-duplicate leakage risk exists (298 affected rows) and is handled explicitly in the Phase 2 split logic, not ignored.
 - Vocabulary size (210 unique tokens over 32846 total tokens) is modest, consistent with a templated/paraphrased synthetic dataset rather than organically collected free-text — worth stating explicitly in the Limitations section (Phase 16).
+
+---
+
+## Addendum — `bot_response` Corruption Found and Fixed (post-Phase-1)
+
+While capturing real UI screenshots for the README, a corruption pattern was
+discovered in the `bot_response` column that the original Phase 1 audit did
+not check for: **2,480 of 4,000 rows (62%)** had a duplicated trailing
+fragment appended one or more times, e.g.:
+
+> "...Let it carry you forward one step at a time You can take your time
+> with it. For now. For now. For now. For now."
+
+This is a generation artifact from the LLM that produced the CSV, not a
+bug in this project's code. It was found and fixed with a targeted regex
+cleanup (`data/expanded_data.csv` was corrected in place; see project
+history). It affects only the `bot_response` text shown to users — it does
+**not** affect `user_input` or `emotion_label`, so it has no effect on any
+classifier, split, or evaluation metric reported elsewhere in this
+repository. `data/train.csv`, `data/evaluation.csv`, and
+`evaluation/faq_results.json` were regenerated after the fix.
+
+**Lesson for future audits:** Phase 1's original checks covered
+`user_input` thoroughly but did not scan `bot_response` for internal
+repeated substrings. A repeated-n-gram check has been identified as a gap
+and should be added to `notebooks/01_data_analysis.py` if this dataset is
+extended.

@@ -1,171 +1,115 @@
-# MENTALCARE AI — Emotion-Aware Support Chatbot
+# 💬 MENTALCARE AI
 
-A hybrid NLP system combining TF-IDF-based FAQ retrieval with a fine-tuned
-emotion classifier, built and evaluated as a rigorous ML methodology
-exercise rather than a UI showcase. **Not a clinical tool** — see
-[`LIMITATIONS.md`](LIMITATIONS.md).
+**A hybrid FAQ-retrieval + ML emotion classifier chatbot, built and evaluated with a real, documented data science methodology.**
 
-## Problem Statement
+> ⚠️ **Portfolio demo project — not a clinical tool.** It does not diagnose,
+> treat, or provide crisis support. If you are in distress, please contact a
+> licensed professional or local emergency/crisis services. This disclaimer
+> is shown directly in the app UI as well.
 
-### Business / User Problem
+---
 
-Support and companionship chatbots often either (a) rely purely on rigid
-FAQ scripts that fail on any paraphrase, or (b) rely purely on generative
-models with no guardrails, which is risky in an emotionally sensitive
-context. This project builds and evaluates a **hybrid retrieval + ML
-architecture** that combines the reliability of curated FAQ responses with
-the flexibility of a learned emotion classifier, backed by a real,
-documented evaluation methodology.
+## See it in action
 
-### Dataset
+<p align="center">
+  <img src="docs/demo.gif" alt="MENTALCARE AI chat demo — live conversation" width="480">
+</p>
 
-`data/expanded_data.csv` — 4,000 rows, 3 columns (`user_input`,
-`emotion_label`, `bot_response`), covering 7 emotion classes: joy, sadness,
-anger, fear, surprise, disgust, neutral. LLM-generated for this project;
-see [Data Quality Analysis](reports/data_quality_report.md) for a full
-audit, including a significant limitation (narrow vocabulary) that shapes
-how every downstream metric should be interpreted.
+<p align="center"><i>A real conversation, captured directly from the running pipeline — not scripted or hand-edited.</i></p>
 
-## Methodology
+<p align="center">
+  <img src="docs/demo.png" alt="MENTALCARE AI chat UI screenshot" width="480">
+</p>
 
-```
-DATA → EDA → DATA QUALITY → SPLITTING → BASELINES → MODEL TRAINING
-  → EVALUATION → ERROR ANALYSIS → MODEL SELECTION → HYBRID SYSTEM
-  → ANALYTICS → TESTING → MLOPS → DEPLOYMENT
-```
+---
 
-| Phase | Report |
-|---|---|
-| Data audit | [`reports/data_quality_report.md`](reports/data_quality_report.md) |
-| Train/eval split | [`reports/split_methodology.md`](reports/split_methodology.md) |
-| Baselines (CV) | [`evaluation/baseline_results.json`](evaluation/baseline_results.json) |
-| Transformer | [`notebooks/04_transformer_training.py`](notebooks/04_transformer_training.py) — **script provided, not yet executed** (see below) |
-| Model comparison & selection | [`reports/model_comparison.md`](reports/model_comparison.md) |
-| Final held-out evaluation | [`evaluation/final_results.json`](evaluation/final_results.json) |
-| Error analysis | [`reports/error_analysis.md`](reports/error_analysis.md) |
-| Class imbalance | [`reports/class_imbalance_analysis.md`](reports/class_imbalance_analysis.md) |
-| FAQ retrieval experiment | [`reports/faq_matching_report.md`](reports/faq_matching_report.md) |
-| Conversation analytics | [`reports/conversation_analytics.md`](reports/conversation_analytics.md) |
-| Statistical rigor & reproducibility | [`reports/model_comparison_statistics.md`](reports/model_comparison_statistics.md) |
+## What This Project Actually Does
 
-## Baseline Models
+MENTALCARE AI is a Flask chat application that responds to a user's message
+in one of two ways:
 
-Three TF-IDF-based baselines were evaluated with 5-fold stratified
-cross-validation on the training split (n=3,200):
+1. **FAQ fast-path** — if the message closely matches a curated example
+   (TF-IDF cosine similarity ≥ an empirically-chosen threshold), it returns
+   a hand-written, reviewed response tied to that example.
+2. **Classifier fallback** — otherwise, a trained emotion classifier
+   (TF-IDF + Linear SVM, 7 classes: joy, sadness, anger, fear, surprise,
+   disgust, neutral) predicts the message's emotion, and the app returns an
+   emotion-appropriate templated response, filtered through a quality gate
+   before being shown to the user.
+
+Every request is logged (session, timestamp, similarity score, predicted
+emotion, response type, latency) for the analytics pipeline described below.
+
+**What it is *not*:** it does not use a large generative language model to
+freely generate text, it does not store or use conversation history beyond
+a session ID, and it is not clinically validated in any way. See
+[Limitations](#limitations) below for the full, honest picture.
+
+---
+
+## Architecture
+
+<p align="center">
+  <img src="docs/architecture.png" alt="Hybrid retrieval + ML pipeline architecture diagram" width="520">
+</p>
+
+**In short:** `User message → validate → FAQ similarity check → (match: curated response) / (no match: classify emotion → generate templated response → quality gate → fallback if needed) → log → return response.`
+
+Implementation: [`flask_app/pipeline.py`](flask_app/pipeline.py)
+
+---
+
+## Real Results (not aspirational)
+
+All numbers below are generated by the scripts in `notebooks/` and saved to
+`evaluation/*.json` — nothing here is estimated.
+
+### Baseline model comparison (5-fold cross-validation on training data, n=3,200)
 
 | Model | Accuracy | Macro F1 | Weighted F1 |
 |---|---|---|---|
 | TF-IDF + Logistic Regression | 0.9997 ± 0.0006 | 0.9997 ± 0.0006 | 0.9997 ± 0.0006 |
-| **TF-IDF + Linear SVM** | **1.0000 ± 0.0000** | **1.0000 ± 0.0000** | **1.0000 ± 0.0000** |
+| **TF-IDF + Linear SVM (selected)** | **1.0000 ± 0.0000** | **1.0000 ± 0.0000** | **1.0000 ± 0.0000** |
 | TF-IDF + Multinomial Naive Bayes | 0.9991 ± 0.0019 | 0.9991 ± 0.0019 | 0.9991 ± 0.0019 |
 
-**Linear SVM was selected** (highest weighted F1, zero variance across
-folds) and evaluated once on the held-out evaluation set (n=800):
-**Accuracy 1.0000, Macro F1 1.0000, Weighted F1 1.0000.**
+### Final held-out evaluation (n=800, never used for model/threshold selection)
 
-### Why these numbers are this high — read before citing them
+**Accuracy: 1.0000 · Macro F1: 1.0000 · Weighted F1: 1.0000**
 
-The data audit found only **210 unique vocabulary tokens** across the whole
-dataset. This makes the 7 classes close to linearly separable by surface
-vocabulary alone, which is why even simple TF-IDF baselines reach ~100%
-with zero fine-tuning or hyperparameter search. Full discussion in
-[`reports/error_analysis.md`](reports/error_analysis.md) and
-[`LIMITATIONS.md`](LIMITATIONS.md). **These numbers demonstrate that the
-methodology and pipeline are implemented and evaluated correctly — they do
-not, by themselves, demonstrate strong generalization to naturalistic
-real-world text.**
+### FAQ retrieval threshold experiment
 
-### Transformer model (Phase 4) — pending
+TF-IDF cosine similarity at threshold **0.6** (chosen via a threshold
+sweep, not an arbitrary default) achieves **100% match accuracy** with a
+**0.88% unmatched rate** on held-out queries — substantially better than a
+naive `difflib`-based approach, which caps out around 62% match rate on
+the same data.
 
-`j-hartmann/emotion-english-distilroberta-base` fine-tuning requires
-`huggingface.co` access unavailable in the environment that built this
-repository. The complete, ready-to-run script is at
-`notebooks/04_transformer_training.py`. Running it and placing the output
-at `evaluation/transformer_results.json`, then re-running
-`notebooks/05_model_comparison.py`, will populate the transformer row in
-the comparison table with real numbers.
+### Why these numbers are this high — read before citing them anywhere
 
-## Hybrid Retrieval + ML Architecture
+The dataset's vocabulary is only **210 unique tokens across 4,000 rows**
+(confirmed in the Phase 1 data audit), because it was LLM-generated from a
+small set of sentence templates. This makes the 7 emotion classes close to
+linearly separable by surface vocabulary alone, which is why even simple
+baselines reach ~100% with no tuning. **This demonstrates the pipeline and
+methodology are implemented and evaluated correctly — it does not, by
+itself, demonstrate strong generalization to naturalistic, diverse
+real-world text.** Full discussion: [`reports/error_analysis.md`](reports/error_analysis.md), [`LIMITATIONS.md`](LIMITATIONS.md).
 
-```
-User message
-     │
-     ▼
-Input validation (non-empty, length cap)
-     │
-     ▼
-FAQ similarity — TF-IDF cosine, threshold chosen empirically (Phase 8: 0.6,
-selected via threshold sweep on held-out queries, not an arbitrary default)
-     │
-     ├── High-confidence match ──► Curated FAQ response
-     │
-     └── No match ──► Emotion classifier (TF-IDF + Linear SVM)
-                            │
-                       Emotion-appropriate templated response
-                            │
-                       Quality gate (non-empty, not an echo of input)
-                            │
-                       Safe fallback if gate fails
-     │
-     ▼
-Every request logged: session_id, timestamp, input length, FAQ similarity,
-predicted emotion, classifier confidence, response type, latency
-```
+Full report index: [`reports/`](reports/) · [`evaluation/`](evaluation/)
 
-Implementation: [`flask_app/pipeline.py`](flask_app/pipeline.py)
+---
 
-### FAQ Retrieval Experiment
-
-Three similarity approaches (character-level `difflib`, token Jaccard,
-TF-IDF cosine) were compared on the held-out set, sweeping thresholds
-rather than assuming a fixed cutoff. **TF-IDF cosine at threshold 0.6**
-was selected: 100% match accuracy with only a 0.88% unmatched rate,
-substantially outperforming `difflib` (which reaches only ~62% match rate
-at best on this data). Full results:
-[`reports/faq_matching_report.md`](reports/faq_matching_report.md).
-
-## Conversation Analytics
-
-The analytics pipeline (`notebooks/09_conversation_analytics.py`) tracks
-message volume, emotion distribution, FAQ-vs-fallback rate, latency, and
-classifier confidence. Since this app has not been deployed with real
-users, the current report runs on simulated traffic sent through the real
-pipeline — the code is identical to what would run on real logs.
-**These are application-level statistics, not clinical measurements.**
-
-## Testing
-
-19 tests across 4 files (`tests/`) covering FAQ matching, emotion
-classification, Flask routes (including malformed JSON and validation
-edge cases), and data pipeline integrity (split leakage checks,
-stratification). Run with `pytest tests/ -v`. CI runs this automatically
-on every push/PR via `.github/workflows/tests.yml`.
-
-## MLOps
-
-- Dependencies pinned in `requirements.txt`
-- `Dockerfile` builds a container serving the Flask app on the pinned SVM
-  model (no runtime dependency on `huggingface.co`)
-- No hardcoded local paths — all paths resolve relative to the repo root
-- `FLASK_DEBUG` and `PORT` configured via environment variables, debug
-  disabled by default
-- GitHub Actions runs the full data pipeline + test suite on every push
-
-## Reproducibility
-
-Full details: [`reports/model_comparison_statistics.md`](reports/model_comparison_statistics.md).
-Fixed random seed (`42`) throughout; deterministic stratified split with
-near-duplicate leakage prevention; model/threshold selection strictly
-separated from the held-out evaluation set.
-
-## Setup
+## Setup (verified working)
 
 ```bash
 git clone <this-repo>
 cd MENTALCARE_AI
 pip install -r requirements.txt
+```
 
-# Regenerate all data artifacts and reports:
+Regenerate all data artifacts and reports (deterministic, seed=42):
+
+```bash
 python notebooks/01_data_analysis.py
 python notebooks/02_data_split.py
 python notebooks/03_baseline_models.py
@@ -174,13 +118,19 @@ python notebooks/06_error_analysis.py
 python notebooks/07_class_imbalance.py
 python notebooks/08_faq_experiment.py
 python notebooks/09_conversation_analytics.py
+```
 
-# Run tests:
+Run the tests:
+
+```bash
 pytest tests/ -v
+```
 
-# Run the app:
-cd flask_app && python app.py
-# then open http://localhost:5000
+Run the app:
+
+```bash
+python flask_app/app.py
+# open http://localhost:5000
 ```
 
 Or with Docker:
@@ -190,19 +140,57 @@ docker build -t mentalcare-ai .
 docker run -p 5000:5000 mentalcare-ai
 ```
 
+---
+
+## Testing & MLOps
+
+- **19 automated tests** (`pytest tests/`) covering FAQ matching, emotion
+  classification, Flask routes (including malformed JSON and validation
+  edge cases), and data-split integrity (leakage checks, stratification).
+- **CI**: GitHub Actions (`.github/workflows/tests.yml`) runs the full data
+  pipeline and test suite on every push/PR.
+- **Docker**: pinned dependencies, no hardcoded paths, `FLASK_DEBUG` and
+  `PORT` configured via environment variables, debug disabled by default.
+
+---
+
+## Project Structure
+
+```
+flask_app/          Flask app, hybrid pipeline, templates, static assets
+notebooks/           Phase-by-phase scripts: data audit -> split -> baselines
+                     -> model comparison -> error analysis -> FAQ experiment
+                     -> conversation analytics
+data/                Raw dataset + reproducible train/evaluation split
+evaluation/          JSON results for every experiment (real, not fabricated)
+reports/             Markdown reports + plots for every phase
+artifacts/           Versioned model file, metrics, plots, reports
+tests/               pytest suite (19 tests)
+docs/                Screenshot, GIF, architecture diagram (this README's assets)
+```
+
+---
+
 ## Limitations
 
-See [`LIMITATIONS.md`](LIMITATIONS.md) for the full, honest list — dataset
-vocabulary size, synthetic data caveats, pending transformer evaluation,
-and what this project is explicitly **not** (a clinical or diagnostic
-tool).
+- **Small, synthetic dataset** (4,000 rows, LLM-generated) with only 210
+  unique vocabulary tokens — see [`reports/data_quality_report.md`](reports/data_quality_report.md).
+- **English-only.**
+- **Not a clinical tool** — no diagnosis, no treatment recommendation, no
+  crisis-intervention functionality.
+- **Near-ceiling accuracy is a dataset artifact**, not evidence of strong
+  real-world generalization — see [Real Results](#real-results-not-aspirational) above.
+- **Transformer fine-tuning (planned Phase 4) has not been run** in this
+  repository — the environment used to build it has no access to
+  `huggingface.co`. The complete script is provided at
+  [`notebooks/04_transformer_training.py`](notebooks/04_transformer_training.py)
+  for anyone to run locally.
+- **Conversation analytics run on simulated demo traffic**, not real users,
+  since this app has not been deployed publicly.
 
-## Disclaimer
+Full list: [`LIMITATIONS.md`](LIMITATIONS.md).
 
-This is a portfolio project demonstrating ML/NLP engineering methodology.
-It is not a substitute for professional mental health care. If you are in
-distress, please contact a licensed professional or local emergency/crisis
-services.
+---
 
 ## License
 
