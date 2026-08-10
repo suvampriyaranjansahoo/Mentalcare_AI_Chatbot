@@ -1,0 +1,188 @@
+{
+  "metadata": {
+    "dataset": "data/train.csv",
+    "train_size": 3200,
+    "random_seed": 42,
+    "cv_strategy": "StratifiedKFold(n_splits=5, shuffle=True, random_state=42)",
+    "note": "Held-out data/evaluation.csv was NOT used at any point in this phase."
+  },
+  "results": {
+    "TF-IDF + Logistic Regression": {
+      "cv_folds": 5,
+      "training_approach": "5-fold stratified cross-validation on train.csv (n=3200)",
+      "accuracy": {
+        "mean": 0.9997,
+        "std": 0.0006,
+        "fold_scores": [
+          1.0,
+          1.0,
+          1.0,
+          0.9984,
+          1.0
+        ]
+      },
+      "macro_f1": {
+        "mean": 0.9997,
+        "std": 0.0006,
+        "fold_scores": [
+          1.0,
+          1.0,
+          1.0,
+          0.9984,
+          1.0
+        ]
+      },
+      "weighted_f1": {
+        "mean": 0.9997,
+        "std": 0.0006,
+        "fold_scores": [
+          1.0,
+          1.0,
+          1.0,
+          0.9984,
+          1.0
+        ]
+      },
+      "macro_precision": {
+        "mean": 0.9997,
+        "std": 0.0006,
+        "fold_scores": [
+          1.0,
+          1.0,
+          1.0,
+          0.9985,
+          1.0
+        ]
+      },
+      "macro_recall": {
+        "mean": 0.9997,
+        "std": 0.0006,
+        "fold_scores": [
+          1.0,
+          1.0,
+          1.0,
+          0.9984,
+          1.0
+        ]
+      }
+    },
+    "TF-IDF + Linear SVM": {
+      "cv_folds": 5,
+      "training_approach": "5-fold stratified cross-validation on train.csv (n=3200)",
+      "accuracy": {
+        "mean": 1.0,
+        "std": 0.0,
+        "fold_scores": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "macro_f1": {
+        "mean": 1.0,
+        "std": 0.0,
+        "fold_scores": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "weighted_f1": {
+        "mean": 1.0,
+        "std": 0.0,
+        "fold_scores": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "macro_precision": {
+        "mean": 1.0,
+        "std": 0.0,
+        "fold_scores": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "macro_recall": {
+        "mean": 1.0,
+        "std": 0.0,
+        "fold_scores": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    "TF-IDF + Multinomial Naive Bayes": {
+      "cv_folds": 5,
+      "training_approach": "5-fold stratified cross-validation on train.csv (n=3200)",
+      "accuracy": {
+        "mean": 0.9991,
+        "std": 0.0019,
+        "fold_scores": [
+          1.0,
+          1.0,
+          1.0,
+          0.9953,
+          1.0
+        ]
+      },
+      "macro_f1": {
+        "mean": 0.9991,
+        "std": 0.0019,
+        "fold_scores": [
+          1.0,
+          1.0,
+          1.0,
+          0.9953,
+          1.0
+        ]
+      },
+      "weighted_f1": {
+        "mean": 0.9991,
+        "std": 0.0019,
+        "fold_scores": [
+          1.0,
+          1.0,
+          1.0,
+          0.9953,
+          1.0
+        ]
+      },
+      "macro_precision": {
+        "mean": 0.9991,
+        "std": 0.0018,
+        "fold_scores": [
+          1.0,
+          1.0,
+          1.0,
+          0.9955,
+          1.0
+        ]
+      },
+      "macro_recall": {
+        "mean": 0.9991,
+        "std": 0.0019,
+        "fold_scores": [
+          1.0,
+          1.0,
+          1.0,
+          0.9953,
+          1.0
+        ]
+      }
+    }
+  }
+}

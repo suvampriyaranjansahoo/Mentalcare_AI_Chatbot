@@ -1,8 +1,21 @@
-streamlit
-flask
-transformers
-torch
-gtts
-speechrecognition
-pandas
+# Core web app
+flask==3.0.3
 
+# Data / ML (baseline pipeline, real-time model at runtime)
+pandas==2.2.2
+numpy==1.26.4
+scikit-learn==1.5.1
+joblib==1.4.2
+
+# Plotting (notebooks/reports)
+matplotlib==3.9.0
+
+# Testing
+pytest==8.2.2
+
+# --- Optional: only required to run notebooks/04_transformer_training.py
+# (transformer fine-tuning), which needs huggingface.co access.
+# Uncomment to run that script locally.
+# transformers==4.42.3
+# torch==2.3.1
+# datasets==2.20.0

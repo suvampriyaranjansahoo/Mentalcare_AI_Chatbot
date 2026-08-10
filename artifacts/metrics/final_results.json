@@ -1,0 +1,143 @@
+{
+  "model": "TF-IDF + Linear SVM",
+  "dataset_size": 4000,
+  "evaluation_size": 800,
+  "accuracy": 1.0,
+  "macro_f1": 1.0,
+  "weighted_f1": 1.0,
+  "macro_precision": 1.0,
+  "macro_recall": 1.0,
+  "confusion_matrix": [
+    [
+      112,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      116,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      116,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      115,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      115,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      113,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      113
+    ]
+  ],
+  "confusion_matrix_labels": [
+    "anger",
+    "disgust",
+    "fear",
+    "joy",
+    "neutral",
+    "sadness",
+    "surprise"
+  ],
+  "classification_report": {
+    "anger": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 112.0
+    },
+    "disgust": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 116.0
+    },
+    "fear": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 116.0
+    },
+    "joy": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 115.0
+    },
+    "neutral": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 115.0
+    },
+    "sadness": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 113.0
+    },
+    "surprise": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 113.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 800.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 800.0
+    }
+  },
+  "selection_reason": "'TF-IDF + Linear SVM' selected: highest mean weighted F1 in 5-fold CV on train.csv (1.0000 \u00b1 0.0000). Transformer fine-tuning (Phase 4) was not executable in this environment (no huggingface.co access); once run locally, its held-out result should be compared against this baseline before final selection is treated as permanent.",
+  "random_seed": 42
+}

@@ -2,88 +2,67 @@
 <html>
 <head>
     <title>MENTALCARE AI</title>
-    <style>
-        body{
-            font-family: Arial, sans-serif;
-            background-color: #f5f5fa;
-        }
-        .chat-container{
-            width: 500px;
-            margin: 50px auto;
-            background: #fff;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        #chat-box{
-            height: 400px;
-            overflow-y: scroll;
-            border: 1px solid #ddd;
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            background: #f0f0ff;
-        }
-        .msg{
-            padding: 5px 10px;
-            margin: 5px 0;
-            border-radius: 10px;
-        }
-        .msg.You{
-            background-color: #d0f0fd;
-            text-align: left;
-        }
-        .msg.MENTALCARE\ AI{
-            background-color: #fdd0f0;
-            text-align: left;
-        }
-        input[type=text]{
-            width: 70%;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        button{
-            padding: 10px 15px;
-            border-radius: 5px;
-            border: none;
-            background-color: #6c63ff;
-            color: white;
-            cursor: pointer;
-        }
-        button:hover{
-            background-color: #574fd6;
-        }
-    </style>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="chat-container">
         <h1>💬 MENTALCARE AI</h1>
+        <p class="disclaimer">
+            This is a portfolio demo project, not a clinical tool. It does not
+            diagnose, treat, or provide crisis support. If you are in distress,
+            please contact a licensed professional or local emergency/crisis
+            services.
+        </p>
         <div id="chat-box"></div>
-        <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off"/>
+        <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off" maxlength="500"/>
         <button id="send-btn">Send</button>
     </div>
-<script>
-    function appendMessage(sender, msg){
-        $('#chat-box').append('<div class="msg '+sender+'"><b>'+sender+':</b> '+msg+'</div>');
-        $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
-    }
 
-    $('#send-btn').click(function(){
-        var user_msg = $('#user-input').val();
-        if(user_msg.trim() != ''){
-            appendMessage('You', user_msg);
-            $('#user-input').val('');
-            $.post("/get", {msg: user_msg}, function(data){
-                appendMessage('MENTALCARE AI', data.bot);
-            });
+    <script>
+        function appendMessage(sender, msg) {
+            var chatBox = document.getElementById('chat-box');
+            var wrapper = document.createElement('div');
+            wrapper.className = 'msg ' + (sender === 'You' ? 'you' : 'bot');
+
+            var strong = document.createElement('b');
+            strong.textContent = sender + ': ';
+
+            wrapper.appendChild(strong);
+            wrapper.appendChild(document.createTextNode(msg));
+
+            chatBox.appendChild(wrapper);
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
-    });
 
-    $('#user-input').keypress(function(e){
-        if(e.which == 13) $('#send-btn').click();
-    });
-</script>
+        function sendMessage() {
+            var input = document.getElementById('user-input');
+            var text = input.value.trim();
+            if (text === '') return;
+
+            appendMessage('You', text);
+            input.value = '';
+
+            fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text })
+            })
+                .then(function (res) {
+                    if (!res.ok) throw new Error('Request failed');
+                    return res.json();
+                })
+                .then(function (data) {
+                    appendMessage('MENTALCARE AI', data.response);
+                })
+                .catch(function () {
+                    appendMessage('MENTALCARE AI', 'Sorry, something went wrong. Please try again.');
+                });
+        }
+
+        document.getElementById('send-btn').addEventListener('click', sendMessage);
+        document.getElementById('user-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
 </body>
 </html>
