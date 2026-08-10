@@ -1,0 +1,12 @@
+services:
+  mentalcare-ai:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      FLASK_DEBUG: "false"
+      DATABASE_PATH: /app/data/mentalcare.db
+    volumes:
+      - mentalcare_data:/app/data
+volumes:
+  mentalcare_data:

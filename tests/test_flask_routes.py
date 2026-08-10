@@ -38,16 +38,13 @@ def test_chat_route_valid_input(client):
 
 def test_chat_route_empty_input(client):
     response = client.post("/chat", json={"message": ""})
-    assert response.status_code == 200
-    body = response.get_json()
-    assert "empty" in body["response"].lower()
+    assert response.status_code == 422
+    assert "empty" in response.get_json()["error"]["message"].lower()
 
 
 def test_chat_route_missing_message_key(client):
     response = client.post("/chat", json={})
-    assert response.status_code == 200
-    body = response.get_json()
-    assert "response" in body
+    assert response.status_code == 422
 
 
 def test_chat_route_malformed_json(client):
@@ -60,6 +57,5 @@ def test_chat_route_malformed_json(client):
 def test_chat_route_overly_long_input(client):
     long_msg = "a" * 1000
     response = client.post("/chat", json={"message": long_msg})
-    assert response.status_code == 200
-    body = response.get_json()
-    assert "too long" in body["response"].lower()
+    assert response.status_code == 422
+    assert "exceed" in response.get_json()["error"]["message"].lower()

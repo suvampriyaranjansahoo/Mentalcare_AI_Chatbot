@@ -1,0 +1,9 @@
+random_seed: 42
+preprocessing_version: text-normalization-v1
+vectorizer:
+  ngram_range: [1, 2]
+  min_df: 2
+selection_metric: macro_f1
+confidence_thresholds:
+  low: 0.45
+  medium: 0.70

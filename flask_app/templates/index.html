@@ -13,7 +13,8 @@
             If you are in distress, please contact a licensed professional
             or local emergency/crisis services.
         </p>
-        <div id="chat-box"></div>
+        <div id="chat-box" aria-live="polite"></div>
+        <p id="status" role="status"></p>
         <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off" maxlength="500"/>
         <button id="send-btn">Send</button>
     </div>
@@ -42,6 +43,7 @@
             appendMessage('You', text);
             input.value = '';
 
+            document.getElementById('status').textContent = 'Thinking…';
             fetch('/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -52,9 +54,11 @@
                     return res.json();
                 })
                 .then(function (data) {
-                    appendMessage('MENTALCARE AI', data.response);
+                    appendMessage('MENTALCARE AI', data.response + (data.emotion ? ' [' + data.emotion + ', confidence ' + data.confidence + ']' : ''));
+                    document.getElementById('status').textContent = '';
                 })
                 .catch(function () {
+                    document.getElementById('status').textContent = '';
                     appendMessage('MENTALCARE AI', 'Sorry, something went wrong. Please try again.');
                 });
         }

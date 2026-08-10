@@ -30,4 +30,9 @@ jobs:
           python notebooks/08_faq_experiment.py
 
       - name: Run tests
-        run: pytest tests/ -v
+        run: |
+          ruff check app flask_app tests scripts
+          pytest tests/ -v --disable-warnings
+
+      - name: Build Docker image
+        run: docker build -t mentalcare-ai:${{ github.sha }} .

@@ -13,6 +13,9 @@ matplotlib==3.9.0
 # Testing
 pytest==8.2.2
 
+# Engineering quality
+ruff==0.5.0
+
 # --- Optional: only required to run notebooks/04_transformer_training.py
 # (transformer fine-tuning), which needs huggingface.co access.
 # Uncomment to run that script locally.
