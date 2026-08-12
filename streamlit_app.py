@@ -13,6 +13,9 @@ from app.llm import OllamaClient
 @st.cache_resource
 def get_service() -> ChatService:
     if "FLASK_SECRET_KEY" in st.secrets: os.environ["FLASK_SECRET_KEY"] = st.secrets["FLASK_SECRET_KEY"]
+    # Streamlit Community Cloud cannot reach a locally running Ollama server.
+    # It uses the app's safe template responses unless explicitly configured otherwise.
+    os.environ.setdefault("LLM_PROVIDER", "disabled")
     settings = Settings.from_env()
     llm = OllamaClient(settings.ollama_base_url, settings.ollama_model, settings.ollama_timeout_seconds)
     return ChatService(settings, ConversationRepository(settings.database_path), build_emotion_classifier(settings), SafetyService(), llm)
