@@ -119,6 +119,18 @@ Open `http://localhost:5000`. The application requires the existing model artifa
 
 Streamlit Community Cloud has ephemeral local storage. Its SQLite database is suitable only for a portfolio demo; use a managed PostgreSQL database before collecting persistent user messages or feedback.
 
+## Deploy with Qwen responses
+
+Streamlit Community Cloud cannot run the local Qwen/Ollama model. To deploy emotion-aware Qwen responses, use a Docker-capable host with at least 8 GB RAM and run:
+
+```bash
+cp .env.example .env
+# Set FLASK_SECRET_KEY in .env to a long, random value.
+docker compose up --build -d
+```
+
+The first startup downloads `qwen3:4b` (about 2.5 GB), then creates `my-qwen-chatbot` from `deploy/ollama/Modelfile`. The Flask app uses the included classifier to detect emotion and sends the resulting emotion, confidence, intent, and safe conversation context to Qwen. Ollama is internal-only; expose only port 5000 through your host or reverse proxy.
+
 ## Testing, reproducibility, and MLOps
 
 ```bash
