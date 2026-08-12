@@ -74,21 +74,27 @@ Current user message: {message}
 Final response:"""
 
     def _generate(self, message: str, emotion: str, confidence: float, intent: str, session_id: str) -> tuple[str | None, str]:
-        if not self.llm: return None, "llm_disabled"
+        if not self.llm:
+            return None, "llm_disabled"
         history = self.repository.session_messages(session_id, self.settings.memory_message_limit)
         prompt = self._prompt(message, emotion, confidence, intent, history)
         for _ in range(2):
             try:
                 response = self.llm.generate(prompt)
-                if self.validator.valid(response, message, history): return response, "ollama_generated"
-            except RuntimeError: return None, "ollama_unavailable"
+                if self.validator.valid(response, message, history):
+                    return response, "ollama_generated"
+            except RuntimeError:
+                return None, "ollama_unavailable"
         return None, "ollama_validation_fallback"
 
     def chat(self, message: str, session_id: str | None = None) -> dict:
-        started = time.perf_counter(); session_id = session_id or str(uuid4())
-        if not isinstance(message, str) or not message.strip(): raise ValueError("message must be a non-empty string")
+        started = time.perf_counter()
+        session_id = session_id or str(uuid4())
+        if not isinstance(message, str) or not message.strip():
+            raise ValueError("message must be a non-empty string")
         message = message.strip()
-        if len(message) > self.settings.max_input_length: raise ValueError(f"message must not exceed {self.settings.max_input_length} characters")
+        if len(message) > self.settings.max_input_length:
+            raise ValueError(f"message must not exceed {self.settings.max_input_length} characters")
         safety = self.safety.assess(message)
         intent = detect_intent(message)
         if safety.level is not RiskLevel.NORMAL:
@@ -97,11 +103,14 @@ Final response:"""
             response, response_type = self.safety.response(safety.level), "safety_override"
         else:
             emotion, confidence = self.classifier.predict(message)
-            if intent == "practical_need": response, response_type = choose(PRACTICAL_RESPONSES, session_id, message), "practical_support"
+            if intent == "practical_need":
+                response, response_type = choose(PRACTICAL_RESPONSES, session_id, message), "practical_support"
             else:
                 response, response_type = self._generate(message, emotion, confidence, intent, session_id)
-                if not response and confidence < self.settings.low_confidence_threshold: response, response_type = choose(LOW_CONFIDENCE_RESPONSES, session_id, message), response_type
-                elif not response: response, response_type = choose(RESPONSES.get(emotion, LOW_CONFIDENCE_RESPONSES), session_id, message), response_type
+                if not response and confidence < self.settings.low_confidence_threshold:
+                    response, response_type = choose(LOW_CONFIDENCE_RESPONSES, session_id, message), response_type
+                elif not response:
+                    response, response_type = choose(RESPONSES.get(emotion, LOW_CONFIDENCE_RESPONSES), session_id, message), response_type
         latency_ms = round((time.perf_counter() - started) * 1000, 2)
         message_id = self.repository.add_message({"session_id": session_id, "message": message, "response": response, "timestamp": datetime.now(timezone.utc).isoformat(), "predicted_emotion": emotion, "confidence": confidence, "intent": intent, "risk_level": safety.level.value, "response_type": response_type, "model_version": self.settings.model_version, "latency_ms": latency_ms})
         return {"message_id": message_id, "session_id": session_id, "response": response, "emotion": emotion, "confidence": round(confidence, 4), "intent": intent, "risk_level": safety.level.value, "response_type": response_type, "model_version": self.settings.model_version, "latency_ms": latency_ms}

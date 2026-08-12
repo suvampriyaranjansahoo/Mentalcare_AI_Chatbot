@@ -1,7 +1,5 @@
 """Optional local Hugging Face emotion inference; no remote API is used."""
 from __future__ import annotations
-from pathlib import Path
-
 class HuggingFaceEmotionClassifier:
     def __init__(self, model_name: str):
         try:

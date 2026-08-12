@@ -14,7 +14,8 @@ class StubLlm:
     def __init__(self, response=None, fails=False): self.response, self.fails, self.calls = response, fails, 0
     def generate(self, prompt):
         self.calls += 1
-        if self.fails: raise RuntimeError("offline")
+        if self.fails:
+            raise RuntimeError("offline")
         return self.response
 
 
