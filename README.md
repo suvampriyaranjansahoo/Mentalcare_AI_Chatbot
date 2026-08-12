@@ -14,13 +14,16 @@ Provide a bounded, non-clinical conversational interface that acknowledges a use
 
 The default repository artifact remains a lightweight TF-IDF classifier so the app starts offline. For transformer inference, install `pip install -r requirements-local-llm.txt` and instantiate `HuggingFaceEmotionClassifier` with a locally downloaded compatible emotion model. Hugging Face supplies emotion classification; Ollama supplies only local, dynamic text generation—no paid API is used.
 
-Install Ollama, pull a local model, and configure the app:
+Install Ollama, verify the already-installed custom model, and configure the app:
 
-```bash
-ollama pull llama3.2:3b
-set LLM_PROVIDER=ollama
-set OLLAMA_MODEL=llama3.2:3b
-set OLLAMA_BASE_URL=http://localhost:11434
+```powershell
+ollama list
+# Expected model: my-qwen-chatbot
+$env:LLM_PROVIDER = "ollama"
+$env:OLLAMA_MODEL = "my-qwen-chatbot"
+$env:OLLAMA_BASE_URL = "http://localhost:11434"
+$env:OLLAMA_TIMEOUT_SECONDS = "60"
+$env:MEMORY_MESSAGE_LIMIT = "6"
 ```
 
 For each normal message, the prompt contains the bounded recent session history, emotion/intent and their confidence, and safety state. High-risk messages never go to Ollama. Generated text is checked for empty output, unsafe/diagnostic language, prompt leakage, repetition, and unreasonable length; one retry is allowed, then the existing safe response fallback is used.
