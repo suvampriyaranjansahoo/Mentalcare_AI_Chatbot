@@ -18,7 +18,7 @@ class Settings:
     low_confidence_threshold: float = 0.45
     medium_confidence_threshold: float = 0.70
     retention_days: int = 30
-    llm_provider: str = "ollama"
+    llm_provider: str = "none"
     ollama_model: str = "my-qwen-chatbot"
     ollama_base_url: str = "http://localhost:11434"
     ollama_timeout_seconds: float = 60.0
@@ -37,7 +37,7 @@ class Settings:
             low_confidence_threshold=float(os.environ.get("LOW_CONFIDENCE_THRESHOLD", "0.45")),
             medium_confidence_threshold=float(os.environ.get("MEDIUM_CONFIDENCE_THRESHOLD", "0.70")),
             retention_days=int(os.environ.get("RETENTION_DAYS", "30")),
-            llm_provider=os.environ.get("LLM_PROVIDER", "ollama"),
+            llm_provider=os.environ.get("LLM_PROVIDER", "none"),
             ollama_model=os.environ.get("OLLAMA_MODEL", "my-qwen-chatbot"),
             ollama_base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
             ollama_timeout_seconds=float(os.environ.get("OLLAMA_TIMEOUT_SECONDS", "60")),
