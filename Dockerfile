@@ -17,4 +17,5 @@ EXPOSE 5000
 
 RUN useradd --create-home appuser && chown -R appuser:appuser /app/data
 USER appuser
-CMD ["python", "flask_app/app.py"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD python -c "import os; from urllib.request import urlopen; urlopen(f\"http://127.0.0.1:{os.environ.get('PORT', '5000')}/health\", timeout=3)"
+CMD ["sh", "-c", "gunicorn --workers 1 --threads 4 --timeout 120 --bind 0.0.0.0:${PORT:-5000} flask_app.app:app"]

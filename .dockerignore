@@ -1,0 +1,14 @@
+.git/
+.github/
+.venv/
+.venv-*/
+__pycache__/
+*.py[cod]
+.env
+data/*.db
+flask_app/logs/
+notebooks/
+reports/
+tests/
+docs/
+*.ipynb
