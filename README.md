@@ -129,7 +129,7 @@ cp .env.example .env
 docker compose up --build -d
 ```
 
-The first startup downloads `qwen3:4b` (about 2.5 GB), then creates `my-qwen-chatbot` from `deploy/ollama/Modelfile`. The Flask app uses the included classifier to detect emotion and sends the resulting emotion, confidence, intent, and safe conversation context to Qwen. Ollama is internal-only; expose only port 5000 through your host or reverse proxy.
+The first startup downloads `qwen2.5:3b` (about 1.9 GB), then creates `my-qwen-chatbot` from `deploy/ollama/Modelfile`. The Flask app uses the included classifier to detect emotion and sends the resulting emotion, confidence, intent, and safe conversation context to Qwen. Ollama is internal-only; expose only port 5000 through your host or reverse proxy.
 
 ## Testing, reproducibility, and MLOps
 

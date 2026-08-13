@@ -5,7 +5,7 @@ services:
     command: >
       ollama serve & server_pid=$$!;
       until ollama list >/dev/null 2>&1; do sleep 1; done;
-      ollama pull qwen3:4b;
+      ollama pull qwen2.5:3b;
       ollama create my-qwen-chatbot -f /models/Modelfile;
       wait $$server_pid
     volumes:
@@ -29,7 +29,7 @@ services:
       LLM_PROVIDER: ollama
       OLLAMA_MODEL: my-qwen-chatbot
       OLLAMA_BASE_URL: http://ollama:11434
-      OLLAMA_TIMEOUT_SECONDS: "60"
+      OLLAMA_TIMEOUT_SECONDS: "120"
     volumes:
       - mentalcare_data:/app/data
     depends_on:
