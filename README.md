@@ -1,137 +1,207 @@
-# MentalCare AI — Safety-First NLP Portfolio Project
+# MentalCare AI
 
-> **Wellness conversation demo, not a therapist, medical device, diagnosis, or crisis service.** For immediate danger, contact local emergency services. In the U.S./Canada, call or text 988.
+<p align="center">
+  <strong>A safety-first, emotion-aware wellness chatbot built with Flask, NLP, and local Qwen generation.</strong>
+</p>
 
-## Project overview
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#qwen-powered-responses">Qwen</a> ·
+  <a href="#deployment">Deployment</a> ·
+  <a href="#safety-and-limitations">Safety</a>
+</p>
 
-MentalCare AI is a Flask-based emotion-aware conversation demo designed to show a complete data-science workflow: data validation, leakage-aware splitting, baseline comparison, error analysis, model serving, safety routing, session analytics, feedback collection, and deployment automation. It preserves the original TF-IDF + Linear SVM model while replacing the monolithic request path with testable application services.
+> **Important:** MentalCare AI is a portfolio and wellness-conversation demo. It is not therapy, a medical device, a diagnostic tool, or an emergency service. If someone is in immediate danger, contact local emergency services. In the U.S. and Canada, call or text **988**.
 
-## Product objective
+![MentalCare AI demo](docs/demo.gif)
 
-Provide a bounded, non-clinical conversational interface that acknowledges a user's expressed emotion, declines to diagnose, escalates high-risk language to a safety response, and produces anonymized product-quality signals without requiring profile data.
+## The problem
 
-## Local Hugging Face + Ollama generation
+Many conversational AI demos can sound empathetic, but they often miss three essential product requirements:
 
-The default repository artifact remains a lightweight TF-IDF classifier so the app starts offline. For transformer inference, install `pip install -r requirements-local-llm.txt` and instantiate `HuggingFaceEmotionClassifier` with a locally downloaded compatible emotion model. Hugging Face supplies emotion classification; Ollama supplies only local, dynamic text generation—no paid API is used.
+- They treat emotional language as ordinary text instead of adapting their response.
+- They can produce unsafe, diagnostic, or inappropriate advice when users express distress.
+- They provide little transparency about model confidence, privacy, quality, or real-world limitations.
 
-Install Ollama, verify the already-installed custom model, and configure the app:
+## The solution
+
+MentalCare AI is a deliberately bounded chatbot that combines **emotion classification**, **risk routing**, **safe response policies**, and optional **local Qwen generation**.
+
+It detects the emotional signal in a message, checks for potential harm before generation, builds a constrained support prompt for ordinary conversations, and records only anonymous product-quality signals. High-risk messages never reach the language model.
+
+| What it does | Why it matters |
+|---|---|
+| Detects one of seven emotion labels | Adapts tone without claiming to diagnose the user |
+| Routes self-harm and emergency language first | Keeps crisis content out of normal generation |
+| Uses a local Qwen model optionally | Enables private, API-key-free text generation |
+| Falls back to vetted response templates | Keeps the experience usable when Qwen is unavailable |
+| Tracks anonymous feedback and session metrics | Supports product iteration without user profiles |
+
+## Key features
+
+- **Safety-first request handling** with dedicated normal, distress, possible-self-harm, and emergency paths.
+- **Emotion-aware NLP** using the included TF-IDF + Linear SVM artifact.
+- **Local Qwen 2.5 3B responses** through Ollama, with response validation and safe fallback behavior.
+- **Session memory and analytics** for mood trends, confidence, response types, and feedback.
+- **Privacy-aware SQLite persistence** using opaque session IDs, parameterized queries, and a session deletion endpoint.
+- **Production foundations** including Docker Compose, GitHub Actions, linting, tests, configuration, and health checks.
+
+## How it works
+
+```mermaid
+flowchart LR
+    U["User message"] --> V["Validate input"]
+    V --> S{"Safety screening"}
+    S -->|"Crisis or emergency"| R["Safety response"]
+    S -->|"Normal conversation"| E["Emotion classifier"]
+    E --> I["Intent + confidence policy"]
+    I --> Q["Qwen 2.5 or safe template"]
+    Q --> O["Supportive reply"]
+    R --> D[("Anonymous SQLite data")]
+    O --> D
+    D --> A["Session analytics + feedback"]
+```
+
+<p align="center">
+  <img src="docs/architecture.png" alt="MentalCare AI architecture" width="850" />
+</p>
+
+### Response policy
+
+1. The application validates the message length and format.
+2. A safety service evaluates risk **before** emotion inference or Qwen generation.
+3. For normal messages, the classifier estimates emotion and a margin-derived confidence score.
+4. The app selects practical support, low-confidence clarification, local Qwen generation, or a deterministic fallback.
+5. A validator rejects empty, repetitive, diagnostic, prompt-leaking, unsafe, or unreasonably long Qwen output.
+6. The message metadata and optional feedback are stored under an opaque session ID.
+
+## Qwen-powered responses
+
+The project uses **Ollama** to run a local `my-qwen-chatbot` model built from `qwen2.5:3b`. Qwen receives a bounded recent conversation, the detected emotion, confidence, intent, and safety state.
+
+The application does not rely on a paid LLM API. If Ollama is offline or output fails validation, it returns a safe built-in response instead.
 
 ```powershell
+# Install Ollama first, then create the chatbot model from this repository.
+ollama pull qwen2.5:3b
+ollama create my-qwen-chatbot -f deploy\ollama\Modelfile
+
+# Confirm that Ollama can see it.
 ollama list
-# Expected model: my-qwen-chatbot
-$env:LLM_PROVIDER = "ollama"
-$env:OLLAMA_MODEL = "my-qwen-chatbot"
-$env:OLLAMA_BASE_URL = "http://localhost:11434"
-$env:OLLAMA_TIMEOUT_SECONDS = "60"
-$env:MEMORY_MESSAGE_LIMIT = "6"
 ```
 
-For each normal message, the prompt contains the bounded recent session history, emotion/intent and their confidence, and safety state. High-risk messages never go to Ollama. Generated text is checked for empty output, unsafe/diagnostic language, prompt leakage, repetition, and unreasonable length; one retry is allowed, then the existing safe response fallback is used.
+Set the following values in `.env` to enable Qwen locally:
 
-## Architecture
-
-```mermaid
-flowchart LR
-  U[User message] --> V[Input validation]
-  V --> S[Safety risk routing]
-  S -->|Crisis / emergency| R[Safety-oriented response]
-  S -->|Normal / distress| E[Emotion classifier]
-  E --> C[Confidence policy + intent]
-  C --> G[Response template]
-  R --> D[(SQLite)]
-  G --> D
-  D --> A[Session and feedback analytics]
+```env
+LLM_PROVIDER=ollama
+OLLAMA_MODEL=my-qwen-chatbot
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_TIMEOUT_SECONDS=120
 ```
 
-`app/` holds API, safety, NLP, service, analytics, database, and configuration concerns. The legacy `flask_app/` folder remains the runnable entry point and UI shell.
+## Technology stack
 
-## Data and NLP pipeline
-
-```mermaid
-flowchart LR
-  Raw[data/expanded_data.csv] --> Validate[scripts/validate_data.py]
-  Validate --> Grouped[Normalize + group near duplicates]
-  Grouped --> Split[Stratified train / held-out evaluation split]
-  Split --> Baselines[TF-IDF: LR / Linear SVM / Naive Bayes]
-  Baselines --> Evaluation[Metrics, confusion matrix, error report]
-  Evaluation --> Registry[Model artifact and registry]
-  Registry --> API[Inference API]
-```
-
-The dataset has 4,000 synthetic English examples, balanced across seven labels. Audit findings include 149 duplicate user inputs and only 210 unique tokens. Grouping normalized duplicates prevents direct train/test contamination, but the narrow template vocabulary makes its near-perfect metrics non-generalizable.
-
-## Model evaluation
-
-Existing, reproducible artifacts report the following held-out test result for the selected classical model:
-
-| Model | Accuracy | Macro F1 | Weighted F1 | Status |
-|---|---:|---:|---:|---|
-| TF-IDF + Logistic Regression | 0.9997 CV | 0.9997 CV | 0.9997 CV | evaluated |
-| TF-IDF + Linear SVM | 1.0000 | 1.0000 | 1.0000 | selected artifact |
-| TF-IDF + Naive Bayes | 0.9991 CV | 0.9991 CV | 0.9991 CV | evaluated |
-| Hugging Face transformer | — | — | — | not evaluated in this repository |
-
-These values are **not evidence of clinical effectiveness or robust real-world generalization**. See [reports/error_analysis.md](reports/error_analysis.md) and [LIMITATIONS.md](LIMITATIONS.md). The transformer training script exists but no transformer metric is claimed.
-
-## Implemented API
-
-| Endpoint | Purpose |
+| Area | Tools |
 |---|---|
-| `GET /health` | service liveness |
-| `GET /model-info` | labels, version, confidence caveat |
-| `POST /chat` / `POST /predict` | safe emotion-aware response |
-| `GET /sessions/<session_id>` | messages plus mood/confidence/transitions |
-| `POST /feedback` | anonymized helpful/not-helpful feedback |
-| `DELETE /sessions/<session_id>` | user-scoped retention/deletion action |
+| Web application | Flask, Jinja templates, HTML/CSS |
+| Emotion NLP | scikit-learn, TF-IDF, Linear SVM, joblib |
+| Local generation | Ollama, Qwen 2.5 3B |
+| Data and analytics | SQLite, pandas, NumPy |
+| Quality | pytest, Ruff, GitHub Actions |
+| Deployment | Docker, Docker Compose, Gunicorn |
 
-`POST /chat` accepts `{ "message": "...", "session_id": "optional" }`. Responses include `emotion`, `confidence`, `intent`, `risk_level`, `response_type`, latency, and `model_version`. SVM confidence is explicitly a margin-derived uncertainty heuristic, not a calibrated probability.
+## Quick start
 
-## Safety and privacy
+### Prerequisites
 
-- Dedicated pre-response rules distinguish normal conversation, emotional distress, possible self-harm, and emergency-high-risk language.
-- Crisis/emergency messages bypass normal response generation and use a clear, non-diagnostic support response.
-- SQLite stores opaque session IDs, messages, response metadata, and optional feedback—no account/profile fields.
-- Queries are parameterized; HTML messages are inserted as text; secure cookie settings and basic security headers are enabled.
-- Configure retention with `RETENTION_DAYS`; use the deletion endpoint for a specific opaque session.
+- Python 3.11+
+- Ollama (only required for Qwen-generated replies)
 
-## Product analytics
+### Run locally
 
-Session analytics provide dominant emotion, emotion distribution, average confidence, uncertainty rate, transition counts, conversation length, and a timestamped mood timeline. Feedback is recorded independently from message content and supports later analysis of confidence/emotion/intent versus helpfulness.
+```powershell
+git clone https://github.com/suvampriyaranjansahoo/Mentalcare_AI_Chatbot.git
+cd Mentalcare_AI_Chatbot
 
-## Local development
-
-```bash
-cp .env.example .env
 python -m venv .venv
-.venv/Scripts/pip install -r requirements.txt   # Windows
-python scripts/validate_data.py
-python flask_app/app.py
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+
+Copy-Item .env.example .env
+.\.venv\Scripts\python.exe flask_app\app.py
 ```
 
-Open `http://localhost:5000`. The application requires the existing model artifact at `artifacts/models/final_model.joblib`.
+Open [http://localhost:5000](http://localhost:5000).
 
-## Deploy on Streamlit Community Cloud
+To use the Streamlit interface instead:
 
-1. Push this repository to GitHub, including `streamlit_app.py` and `artifacts/models/final_model.joblib`.
-2. In [Streamlit Community Cloud](https://share.streamlit.io/), select **New app**, choose the GitHub repository and `main` branch, then set the main file to `streamlit_app.py`.
-3. Add a `FLASK_SECRET_KEY` in the Streamlit **Secrets** page. Do not commit `.env`.
-4. Deploy. The app has no external API requirement: Streamlit directly loads the existing model and safety services.
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run streamlit_app.py
+```
 
-Streamlit Community Cloud has ephemeral local storage. Its SQLite database is suitable only for a portfolio demo; use a managed PostgreSQL database before collecting persistent user messages or feedback.
+Open [http://localhost:8501](http://localhost:8501).
 
-## Deploy with Qwen responses
+## API
 
-Streamlit Community Cloud cannot run the local Qwen/Ollama model. To deploy emotion-aware Qwen responses, use a Docker-capable host with at least 8 GB RAM and run:
+| Endpoint | Description |
+|---|---|
+| `GET /health` | Liveness check |
+| `GET /model-info` | Model labels, version, and confidence caveat |
+| `POST /chat` or `POST /predict` | Emotion-aware, safety-routed response |
+| `GET /sessions/<session_id>` | Messages and anonymous session analytics |
+| `POST /feedback` | Record helpful / not-helpful feedback |
+| `DELETE /sessions/<session_id>` | Delete a session's stored messages |
+
+Example request:
 
 ```bash
-cp .env.example .env
-# Set FLASK_SECRET_KEY in .env to a long, random value.
-docker compose up --build -d
+curl -X POST http://localhost:5000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message":"I feel overwhelmed about tomorrow."}'
 ```
 
-The first startup downloads `qwen2.5:3b` (about 1.9 GB), then creates `my-qwen-chatbot` from `deploy/ollama/Modelfile`. The Flask app uses the included classifier to detect emotion and sends the resulting emotion, confidence, intent, and safe conversation context to Qwen. Ollama is internal-only; expose only port 5000 through your host or reverse proxy.
+Example response fields include `emotion`, `confidence`, `intent`, `risk_level`, `response_type`, `model_version`, and latency.
 
-## Testing, reproducibility, and MLOps
+## Data and evaluation
+
+The included dataset contains 4,000 synthetic English messages across seven labels. The project validates input data, groups near-duplicates before splitting, compares baselines, and records reproducible evaluation artifacts.
+
+| Model | Held-out accuracy | Status |
+|---|---:|---|
+| TF-IDF + Logistic Regression | 0.9997 CV | Evaluated |
+| TF-IDF + Linear SVM | 1.0000 | Selected serving artifact |
+| TF-IDF + Naive Bayes | 0.9991 CV | Evaluated |
+| Transformer classifier | — | Not evaluated in this repository |
+
+These metrics come from a narrow synthetic dataset and are **not** evidence of clinical effectiveness or real-world generalization. See [LIMITATIONS.md](LIMITATIONS.md) and [reports/error_analysis.md](reports/error_analysis.md).
+
+## Deployment
+
+### Docker deployment with Qwen
+
+Use a Docker-capable server with at least 8 GB RAM and approximately 20 GB of free disk space.
+
+```bash
+git clone https://github.com/suvampriyaranjansahoo/Mentalcare_AI_Chatbot.git
+cd Mentalcare_AI_Chatbot
+cp .env.example .env
+```
+
+Set a strong `FLASK_SECRET_KEY` in `.env`, then start both the Flask app and the internal Ollama service:
+
+```bash
+docker compose up --build -d
+docker compose ps
+docker compose logs -f
+```
+
+The first launch downloads `qwen2.5:3b`, creates `my-qwen-chatbot`, then starts the web app on port `5000`. Keep Ollama internal; expose only the Flask service through a reverse proxy or hosting firewall.
+
+### Streamlit Community Cloud
+
+Streamlit Community Cloud can host the Streamlit interface but cannot run your local Ollama/Qwen model. It will use the built-in safe template responses instead. SQLite storage is temporary there, so it is appropriate only for a portfolio demo.
+
+## Quality checks
 
 ```bash
 ruff check app flask_app tests scripts
@@ -139,15 +209,30 @@ pytest tests/ -v
 docker compose up --build
 ```
 
-GitHub Actions installs dependencies, regenerates existing model artifacts, runs lint/tests, and builds the Docker image. Training/inference are separated: the serving app only loads a model artifact; data validation and evaluation belong in scripts/notebooks.
+GitHub Actions installs dependencies, regenerates required model artifacts, runs the checks, and verifies the Docker image builds.
 
-## Limitations and roadmap
+## Safety and limitations
 
-Implemented versus planned status is documented in [reports/IMPLEMENTATION_STATUS.md](reports/IMPLEMENTATION_STATUS.md). The priority roadmap is: evaluate against licensed naturalistic datasets; derive validation-only confidence calibration; add a vetted region-aware crisis-resource provider; then add authenticated deployment, rate limiting, observability, and data-governance review.
+- This project does not diagnose, treat, or replace professional care.
+- It is not a crisis intervention service and should not be used as one.
+- High-risk language uses a dedicated safety response and bypasses Qwen.
+- Model confidence is a margin-derived uncertainty heuristic, **not** a calibrated probability.
+- The training examples are synthetic and contain limited linguistic diversity.
+- A production launch needs data governance review, rate limiting, observability, authentication, a managed database, and region-aware crisis resources.
 
-## Resume-ready project summary
+See [LIMITATIONS.md](LIMITATIONS.md) and [reports/IMPLEMENTATION_STATUS.md](reports/IMPLEMENTATION_STATUS.md) for full details.
 
-- Built a safety-first NLP service that separates risk routing, TF-IDF emotion inference, confidence-aware response policy, and Flask API delivery.
-- Designed leakage-aware data validation and grouped stratified evaluation workflows for a seven-class text classifier, with baseline comparison and transparent synthetic-data limitations.
-- Implemented SQLite-backed session memory, anonymized feedback capture, and emotion/confidence/transition analytics for product-quality measurement.
-- Added reproducibility and delivery foundations: model version metadata, environment configuration, contract/safety tests, linting, Docker Compose, and CI image builds.
+## Project structure
+
+```text
+app/                 Core API, safety, NLP, LLM, database, and analytics services
+flask_app/           Flask entry point and browser UI
+artifacts/           Serving model and evaluation outputs
+data/                Synthetic dataset and local SQLite location
+deploy/ollama/       Version-controlled Ollama model definition
+tests/               Safety, API, NLP, fallback, and data-pipeline tests
+```
+
+## License
+
+This project is available under the [MIT License](LICENSE).
